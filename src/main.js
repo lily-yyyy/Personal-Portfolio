@@ -12,7 +12,8 @@ import { folders } from "./content.js";
 // Put your downloaded .glb / .gltf file in public/models/ and set its
 // filename here. Everything in public/ is served as-is by Vite, so a file
 // at public/models/room.glb is fetched at runtime as "/models/room.glb".
-const MODEL_PATH = "/models2/scene.gltf";
+// const MODEL_PATH = "/models2/scene.gltf";
+const MODEL_PATH = `${import.meta.env.BASE_URL}models2/scene.gltf`;
 
 // This must match the exact mesh name of the laptop inside your model.
 // Move your mouse over the laptop once the room has loaded and read the
