@@ -7,4 +7,7 @@ portfolio, in the style of sooahs-room-folio.
 https://skfb.ly/6XQRL
 Model from Sketchfab
 
+## Inspo
+https://www.sooahs-room-folio.com/
+https://rachelqrwei.ca/
 
