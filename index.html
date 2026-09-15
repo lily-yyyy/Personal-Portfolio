@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic&family=Noto+Serif+SC:wght@200..900&family=Syne+Mono&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Room Portfolio</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+
+    <!-- Loading screen. Hidden automatically once the model finishes loading. -->
+    <div id="loading-screen">
+      <p id="loading-text">Loading room... 0%</p>
+    </div>
+
+    <!-- Simple overlay UI. Replace with your own sections later. -->
+    <div id="ui-overlay">
+      <h1>Lily Lan's Space</h1>
+      <p>WELCOME, click things in the room to explore, laptop for example...</p>
+    </div>
+
+    <!-- This panel is just for development: it shows the name of whatever
+         object your mouse is hovering, so you can find out what each part
+         of your downloaded model is called. Delete it once you're done
+         mapping names to sections. -->
+    <!-- <div id="debug-panel">Hover an object to see its name</div> -->
+
+    <!-- Shown when the laptop is clicked: a simple "desktop" full of folder
+         icons, one per section. Populated from src/content.js. -->
+    <div id="laptop-overlay" class="hidden">
+      <button id="laptop-close">&larr; Back to room</button>
+      <div id="desktop-icons"></div>
+    </div>
+
+    <!-- A single reusable window for whichever folder is currently open. -->
+    <div id="content-window" class="hidden">
+      <div id="content-window-inner">
+        <button id="window-close" aria-label="Close">&times;</button>
+        <h2 id="window-title"></h2>
+        <div id="window-body"></div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

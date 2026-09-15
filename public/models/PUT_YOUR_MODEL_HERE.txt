@@ -1,0 +1,12 @@
+Drop your downloaded .glb or .gltf file in this folder.
+
+If your model came as a .gltf file with separate .bin and texture files
+(rather than a single .glb), put all of those files in this same folder
+together, they need to stay next to each other.
+
+Then open src/main.js and set MODEL_PATH to match your filename, for
+example:
+
+  const MODEL_PATH = "/models/isometric-room.glb";
+
+You can delete this text file once your model is in place.
