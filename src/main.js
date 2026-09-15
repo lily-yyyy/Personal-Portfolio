@@ -202,7 +202,7 @@ function frameModel(model) {
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
-const debugPanel = document.getElementById("debug-panel");
+// const debugPanel = document.getElementById("debug-panel");
 
 function updatePointer(event) {
   pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -218,12 +218,12 @@ window.addEventListener("pointermove", (event) => {
   const hits = raycaster.intersectObject(roomModel, true);
 
   if (hits.length > 0) {
-    debugPanel.textContent = `Hovering: ${hits[0].object.name || "(unnamed mesh)"}`;
+    // debugPanel.textContent = `Hovering: ${hits[0].object.name || "(unnamed mesh)"}`;
     document.body.style.cursor = interactiveMeshes.includes(hits[0].object)
       ? "pointer"
       : "default";
   } else {
-    debugPanel.textContent = "Hover an object to see its name";
+    // debugPanel.textContent = "Hover an object to see its name";
     document.body.style.cursor = "default";
   }
 });
