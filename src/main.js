@@ -228,11 +228,25 @@ window.addEventListener("pointermove", (event) => {
   }
 });
 
-window.addEventListener("click", (event) => {
+let pointerDownPos = null;
+
+window.addEventListener("pointerdown", (event) => {
+  pointerDownPos = { x: event.clientX, y: event.clientY };
+});
+
+window.addEventListener("pointerup", (event) => {
+  if (!pointerDownPos) return;
+  const dx = event.clientX - pointerDownPos.x;
+  const dy = event.clientY - pointerDownPos.y;
+  const dragDistance = Math.hypot(dx, dy);
+  pointerDownPos = null;
+
+  // If the pointer moved more than a few pixels, treat it as an orbit
+  // drag rather than a tap/click on an object.
+  if (dragDistance > 10) return;
+
   updatePointer(event);
 
-  // Ignore clicks on the 3D scene while the laptop UI is already open, so
-  // you can't accidentally click something behind the overlay.
   if (!roomModel || laptopOpen) return;
 
   raycaster.setFromCamera(pointer, camera);
