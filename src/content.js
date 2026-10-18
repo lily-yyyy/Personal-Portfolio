@@ -7,6 +7,10 @@
 // - `ui` holds the short interface strings (headings, buttons, loading text).
 // - `folders` holds one entry per folder icon on the laptop "desktop".
 //   "body" is HTML, so keep using simple tags like <p>, <h3>, <ul>/<li>, <a>.
+//   A folder can have a `timeline` instead of (or as well as) a body: a list
+//   of entries, newest first, each with date, title, org, highlight and
+//   details. They're drawn as a vertical timeline; "details" is hidden
+//   behind a "Show details" toggle. To add a new job, add one entry.
 
 export const ui = {
   en: {
@@ -19,6 +23,8 @@ export const ui = {
     close: "Close",
     langToggle: "中文",
     langToggleLabel: "切换到中文",
+    showDetails: "Show details",
+    hideDetails: "Hide details",
   },
   zh: {
     pageTitle: "Lily Lan 的个人作品集",
@@ -30,6 +36,8 @@ export const ui = {
     close: "关闭",
     langToggle: "EN",
     langToggleLabel: "Switch to English",
+    showDetails: "展开详情",
+    hideDetails: "收起",
   },
 };
 
@@ -52,77 +60,206 @@ export const folders = [
     },
   },
   {
-    id: "work-experience",
+    id: "education",
+    icon: "🎓",
+    label: { en: "Education", zh: "教育背景" },
+    timeline: [
+      {
+        date: { en: "Mar 2024 – Dec 2025", zh: "2024年3月 – 2025年12月" },
+        title: { en: "Master of Information Technology", zh: "信息技术硕士" },
+        org: { en: "Monash University", zh: "莫纳什大学（Monash University）" },
+        highlight: { en: "WAM: Distinction · Student Choice Award · Best Prototype nominee", zh: "加权平均成绩：Distinction · 学生选择奖 · 最佳原型奖提名" },
+        details: {
+          en: `
+            <ul>
+              <li>Student Choice Award, Monash FIT Industry Experience Program (2025)</li>
+              <li>Best Prototype Award nominee, Monash Innovation Guarantee (2025)</li>
+              <li>Most Wanted / Usable App, class showcase (2024)</li>
+              <li><a href="https://www.credly.com/badges/608245c9-7ba6-4f78-a2b0-a11b1179883e" target="_blank" rel="noopener">Innovation for Impact badge</a></li>
+              <li>Alumni to Student Mentoring Program certificate</li>
+              <li>Student volunteer, Orientation Week and Monash Wholefoods</li>
+            </ul>
+          `,
+          zh: `
+            <ul>
+              <li>莫纳什信息技术学院行业实践项目“学生选择奖”（2025）</li>
+              <li>莫纳什创新保障计划“最佳原型奖”提名（2025）</li>
+              <li>课堂展示“最受欢迎与最实用应用”奖（2024）</li>
+              <li><a href="https://www.credly.com/badges/608245c9-7ba6-4f78-a2b0-a11b1179883e" target="_blank" rel="noopener">Innovation for Impact 徽章</a></li>
+              <li>校友导师计划（Alumni to Student Mentoring Program）证书</li>
+              <li>迎新周及 Monash Wholefoods 学生志愿者</li>
+            </ul>
+          `,
+        },
+      },
+      {
+        date: { en: "Mar 2020 – Mar 2024", zh: "2020年3月 – 2024年3月" },
+        title: { en: "Bachelor of Software Engineering (Honours)", zh: "软件工程荣誉学士" },
+        org: { en: "Deakin University", zh: "迪肯大学（Deakin University）" },
+        highlight: { en: "Vice-Chancellor's Academic Excellence Scholarship (100% tuition)", zh: "校长学术卓越奖学金（全额学费）" },
+        details: {
+          en: `
+            <ul>
+              <li>Vice-Chancellor's Academic Excellence Scholarship, covering 100% of tuition</li>
+              <li>3rd of 18 projects at the Deakin InnoFes showcase (2022)</li>
+              <li>Student Ambassador, Orientation Week and Open Day</li>
+            </ul>
+          `,
+          zh: `
+            <ul>
+              <li>获得校长学术卓越奖学金，覆盖全部学费</li>
+              <li>迪肯大学 InnoFes 创新展 18 个项目中获得第三名（2022）</li>
+              <li>迎新周及开放日学生大使</li>
+            </ul>
+          `,
+        },
+      },
+    ],
+  },
+  {
+    id: "industry-experience",
     icon: "💼",
-    label: { en: "Work Experience", zh: "工作经历" },
-    body: {
-      en: `
-      <h3>Project Lead, Full Stack Developer, Cloud Engineer</h3>
-      <p>Monash FIT Postgraduate Industry Experience Program, Aug 2025 to Oct 2025</p>
-      <ul>
-        <li>Led a team of 5 through 3 agile iterations to build and launch a water quality monitoring platform for Victorian swimmers, earning the Student Choice Award among 6 competing teams.</li>
-        <li>Architected and deployed the full AWS infrastructure, including EC2, RDS PostgreSQL, S3, and secure domain routing through Route 53 and CloudFront, while maintaining over 99 percent uptime.</li>
-        <li>Built the Flask REST API and Vue.js frontend, validated by real world use from more than 5 Victorian residents.</li>
-      </ul>
-
-      <h3>Strategy and Marketing Consultant, Project Lead</h3>
-      <p>Australian Pesticide Research Network, June 2025 to July 2025</p>
-      <ul>
-        <li>Led a 6 person team spanning Australia, Malaysia, and the UK to deliver every project milestone 2 days ahead of schedule using structured agile workflows.</li>
-        <li>Proposed a redesigned website UX aimed at increasing user engagement and reducing bounce rates for the client's research platform.</li>
-        <li>Created and executed the client's first digital campaign, producing video and graphic assets to raise awareness among university students.</li>
-      </ul>
-
-      <h3>Full Stack Developer, Internship</h3>
-      <p>Bluebottle Digital, Aug 2022 to Nov 2022</p>
-      <ul>
-        <li>Developed and maintained RESTful APIs that boosted performance for Endota Spa's website.</li>
-        <li>Built and deployed a Nearby Store Search feature, making store locations easier for customers to find online.</li>
-        <li>Used AWS Lambda serverless architecture to reduce infrastructure overhead and improve scalability.</li>
-      </ul>
-
-      <h3>Front End Developer, Internship</h3>
-      <p>Thoth Tech Education, Dec 2023 to Mar 2024</p>
-      <ul>
-        <li>Enhanced dynamic front end components for a Deakin University study platform using Angular and TypeScript, improving performance for thousands of concurrent users.</li>
-        <li>Integrated the Numbas API to streamline online exam delivery, reducing test delivery errors for thousands of Deakin students.</li>
-        <li>Collaborated with a 3 person agile team, working within a Docker containerized environment to improve long term scalability.</li>
-      </ul>
-      `,
-      zh: `
-      <h3>项目负责人 / 全栈开发工程师 / 云工程师</h3>
-      <p>莫纳什大学信息技术学院（FIT）研究生行业实践项目，2025年8月 – 2025年10月</p>
-      <ul>
-        <li>带领 5 人团队完成 3 轮敏捷迭代，为维多利亚州的游泳爱好者打造并上线水质监测平台，在 6 支参赛队伍中荣获“学生选择奖”（Student Choice Award）。</li>
-        <li>设计并部署完整的 AWS 基础设施，包括 EC2、RDS PostgreSQL、S3，以及基于 Route 53 和 CloudFront 的安全域名路由，系统可用性保持在 99% 以上。</li>
-        <li>开发 Flask REST API 与 Vue.js 前端，并经过 5 位以上维多利亚州居民的真实使用验证。</li>
-      </ul>
-
-      <h3>策略与市场营销顾问 / 项目负责人</h3>
-      <p>澳大利亚农药研究网络（Australian Pesticide Research Network），2025年6月 – 2025年7月</p>
-      <ul>
-        <li>带领横跨澳大利亚、马来西亚和英国的 6 人团队，采用结构化敏捷流程，每个项目里程碑均提前 2 天交付。</li>
-        <li>为客户的研究平台提出网站用户体验（UX）改版方案，旨在提升用户参与度、降低跳出率。</li>
-        <li>策划并执行客户的首次数字营销活动，制作视频与平面素材，提升其在大学生群体中的知名度。</li>
-      </ul>
-
-      <h3>全栈开发实习生</h3>
-      <p>Bluebottle Digital，2022年8月 – 2022年11月</p>
-      <ul>
-        <li>开发并维护 RESTful API，提升了 Endota Spa 官网的性能。</li>
-        <li>开发并上线“附近门店搜索”功能，让顾客更方便地在线查找门店位置。</li>
-        <li>采用 AWS Lambda 无服务器架构，降低基础设施开销并提升可扩展性。</li>
-      </ul>
-
-      <h3>前端开发实习生</h3>
-      <p>Thoth Tech Education，2023年12月 – 2024年3月</p>
-      <ul>
-        <li>使用 Angular 和 TypeScript 优化迪肯大学（Deakin University）学习平台的动态前端组件，提升了数千名并发用户的使用体验。</li>
-        <li>集成 Numbas API，简化在线考试流程，减少了数千名迪肯大学学生的考试交付错误。</li>
-        <li>在 Docker 容器化环境中与 3 人敏捷团队协作，提升系统的长期可扩展性。</li>
-      </ul>
-      `,
-    },
+    label: { en: "Industry Experience", zh: "行业经历" },
+    timeline: [
+      {
+        date: { en: "Aug – Oct 2025", zh: "2025年8月 – 10月" },
+        title: { en: "Project Lead & Cloud Engineer · Water Quality Platform", zh: "项目负责人 / 云工程师 · 水质监测平台" },
+        org: { en: "Monash FIT Postgraduate Industry Experience Program", zh: "莫纳什大学信息技术学院研究生行业实践项目" },
+        highlight: { en: "Student Choice Award among 6 teams · team of 5", zh: "6 支队伍中荣获“学生选择奖” · 5 人团队" },
+        details: {
+          en: `
+            <p><strong>The problem.</strong> Victorians had no simple way to check whether the water at their swimming spots was safe. Our brief was tied to UN Sustainable Development Goal 6, clean water.</p>
+            <p><strong>What I did</strong></p>
+            <ul>
+              <li>Facilitated the team from an open brainstorm to a defined problem, target audience and scope.</li>
+              <li>Ran delivery across 3 agile iterations: weekly meetings with agendas and minutes, daily standups, a Kanban board, and tasks matched to each person's strengths.</li>
+              <li>Acted as the team's first point of contact for problems across database, backend, frontend and machine learning work.</li>
+              <li>Designed and deployed the AWS architecture (EC2, RDS PostgreSQL, S3, Route 53, CloudFront).</li>
+              <li>Turned stakeholder criticism of version 1 ("gloomy and hard to understand") into a redesign through Figma prototypes.</li>
+            </ul>
+            <p><strong>Outcome.</strong> Student Choice Award among 6 teams, the highest class score in 2 of 3 iterations, 99%+ uptime, and real use by 5+ Victorian residents.</p>
+          `,
+          zh: `
+            <p><strong>问题。</strong>维多利亚州居民缺少一个简单的方式来查询游泳地点的水质是否安全。项目主题围绕联合国可持续发展目标 6：清洁饮水。</p>
+            <p><strong>我的工作</strong></p>
+            <ul>
+              <li>带领团队从开放式头脑风暴出发，明确问题定义、目标用户和项目范围。</li>
+              <li>主导 3 轮敏捷迭代的交付：组织有议程和会议纪要的周会、每日站会、看板管理，并根据成员特长分配任务。</li>
+              <li>作为团队的第一联系人，协助成员解决数据库、后端、前端和机器学习方面的问题。</li>
+              <li>设计并部署 AWS 云架构（EC2、RDS PostgreSQL、S3、Route 53、CloudFront）。</li>
+              <li>针对利益相关方对第一版“沉闷、难以理解”的批评，通过 Figma 原型主导界面重新设计。</li>
+            </ul>
+            <p><strong>成果。</strong>在 6 支队伍中荣获“学生选择奖”，3 轮迭代中有 2 轮获得全班最高分，系统可用性 99% 以上，并有 5 位以上维多利亚州居民实际使用。</p>
+          `,
+        },
+      },
+      {
+        date: { en: "Jul 2025", zh: "2025年7月" },
+        title: { en: "Team Lead · Focus Bear", zh: "团队负责人 · Focus Bear" },
+        org: { en: "Monash Innovation Guarantee, with industry partner Focus Bear", zh: "莫纳什创新保障计划，行业合作方 Focus Bear" },
+        highlight: { en: "Best Prototype Award nominee · team of 9 from 6 disciplines", zh: "“最佳原型奖”提名 · 来自 6 个专业的 9 人团队" },
+        details: {
+          en: `
+            <p><strong>The problem.</strong> Focus Bear helps adults with ADHD and autism manage distractions and build routines, but many users quit after a day or two because the nudges felt invasive. The founder's challenge: how can the app nudge adults with ADHD towards productivity without being annoying?</p>
+            <p><strong>What I did</strong></p>
+            <ul>
+              <li>Led a cross-disciplinary team through design thinking, from brief to final pitch in 3 weeks.</li>
+              <li>Mapped the root causes of low retention and the stakeholders, from users and competitors to clinicians and employers.</li>
+              <li>Directed in-depth interviews and usability testing with 10+ students, and grouped the feedback into underlying problems.</li>
+              <li>Pitched redesigned prototypes to Focus Bear's founder.</li>
+            </ul>
+            <p><strong>What we found.</strong> An overwhelming interface (long onboarding, too many popups), interruptions that broke focus, and features nobody explained. We simplified the modes and redesigned the Start and To-do Player pages.</p>
+            <p><strong>Outcome.</strong> Nominated for the Best Prototype Award.</p>
+          `,
+          zh: `
+            <p><strong>问题。</strong>Focus Bear 帮助患有 ADHD 和自闭症的成年人管理干扰、建立日常习惯，但许多用户觉得提醒过于打扰，用一两天就放弃了。创始人提出的挑战是：如何让应用在不惹人烦的前提下，引导 ADHD 成年人提高效率？</p>
+            <p><strong>我的工作</strong></p>
+            <ul>
+              <li>带领跨学科团队运用设计思维，在 3 周内从需求简报推进到最终路演。</li>
+              <li>梳理用户留存率低的根本原因，并绘制利益相关方地图，涵盖用户、竞品、临床专家和雇主等。</li>
+              <li>主导对 10 名以上学生的深度访谈和可用性测试，并将反馈归纳为核心问题。</li>
+              <li>向 Focus Bear 创始人展示重新设计的原型。</li>
+            </ul>
+            <p><strong>发现。</strong>界面信息过载（引导流程冗长、弹窗过多）、打断专注的干扰，以及缺少说明的功能。我们简化了模式设置，并重新设计了开始页和待办播放页。</p>
+            <p><strong>成果。</strong>获得“最佳原型奖”提名。</p>
+          `,
+        },
+      },
+      {
+        date: { en: "Jun – Jul 2025", zh: "2025年6月 – 7月" },
+        title: { en: "Project Lead · Australian Pesticide Research Network", zh: "项目负责人 · 澳大利亚农药研究网络（APRN）" },
+        org: { en: "Monash TeaMWork program, remote", zh: "莫纳什 TeaMWork 项目，远程协作" },
+        highlight: { en: "Every milestone 2 days early · team of 6 across 3 countries", zh: "所有里程碑提前 2 天完成 · 横跨 3 个国家的 6 人团队" },
+        details: {
+          en: `
+            <p><strong>The problem.</strong> APRN, Australia's peak body for agricultural chemical research, wanted a communication strategy, marketing assets and website recommendations to reach university students.</p>
+            <p><strong>What we found.</strong> APRN's channels (a newsletter with 10,000+ followers, LinkedIn, an industry-focused website) weren't reaching students. Students wanted real opportunities, such as projects, research and leadership roles, and spend their time in university clubs and on Instagram.</p>
+            <p><strong>What we delivered</strong></p>
+            <ul>
+              <li>Student project and leadership opportunities, with sample project briefs.</li>
+              <li>A promotion strategy built on short videos for Instagram Reels and TikTok.</li>
+              <li>Social media assets plus a reusable illustration set and templates.</li>
+            </ul>
+            <p><strong>Outcome.</strong> Every weekly milestone delivered 2 days early. The outreach strategy became the core of APRN's new student engagement initiative.</p>
+          `,
+          zh: `
+            <p><strong>问题。</strong>APRN 是澳大利亚农业化学品研究领域的权威机构，希望制定传播策略、营销素材和网站优化建议，以更好地触达大学生群体。</p>
+            <p><strong>发现。</strong>APRN 现有渠道（拥有 1 万多名订阅者的通讯、领英、面向行业的网站）难以触达学生。学生更希望获得项目、科研和领导力等实际机会，并且主要活跃在大学社团和 Instagram 上。</p>
+            <p><strong>交付成果</strong></p>
+            <ul>
+              <li>面向学生的项目与领导力机会方案，并附示例项目简介。</li>
+              <li>以 Instagram Reels 和 TikTok 短视频为核心的推广策略。</li>
+              <li>社交媒体素材，以及可重复使用的插画和模板。</li>
+            </ul>
+            <p><strong>成果。</strong>每周里程碑均提前 2 天交付，外联策略成为 APRN 新学生参与计划的核心。</p>
+          `,
+        },
+      },
+      {
+        date: { en: "Dec 2023 – Mar 2024", zh: "2023年12月 – 2024年3月" },
+        title: { en: "Front End Developer (Internship) · Thoth Tech Education", zh: "前端开发实习生 · Thoth Tech Education" },
+        org: { en: "Deakin University's OnTrack learning platform", zh: "迪肯大学 OnTrack 学习平台" },
+        highlight: { en: "Numbas API integration for thousands of Deakin students", zh: "为数千名迪肯大学学生集成 Numbas 考试 API" },
+        details: {
+          en: `
+            <ul>
+              <li>Integrated the Numbas API into the online exam system, reducing test delivery errors for thousands of Deakin students.</li>
+              <li>Enhanced front-end components in Angular and TypeScript, improving page performance under more concurrent users.</li>
+              <li>Worked in an agile team of 3 with weekly standups, inside a Docker containerised environment.</li>
+            </ul>
+          `,
+          zh: `
+            <ul>
+              <li>将 Numbas API 集成到在线考试系统，减少了数千名迪肯大学学生的考试交付错误。</li>
+              <li>使用 Angular 和 TypeScript 优化前端组件，提升了高并发下的页面性能。</li>
+              <li>在 Docker 容器化环境中，与 3 人敏捷团队协作并参加每周站会。</li>
+            </ul>
+          `,
+        },
+      },
+      {
+        date: { en: "Aug – Nov 2022", zh: "2022年8月 – 11月" },
+        title: { en: "Full Stack Developer (Internship) · Bluebottle Digital", zh: "全栈开发实习生 · Bluebottle Digital" },
+        org: { en: "Client: Endota Spa", zh: "客户：Endota Spa" },
+        highlight: { en: "Built the Nearby Store Search feature", zh: "开发“附近门店搜索”功能" },
+        details: {
+          en: `
+            <ul>
+              <li>Built and deployed a Nearby Store Search feature, making store locations easier for customers to find.</li>
+              <li>Developed and maintained RESTful APIs and used AWS Lambda serverless architecture to cut infrastructure overhead.</li>
+              <li>Took part in sprint planning and retrospectives in a cross-functional team, using Git branching and code review.</li>
+            </ul>
+          `,
+          zh: `
+            <ul>
+              <li>开发并上线“附近门店搜索”功能，让顾客更方便地找到门店位置。</li>
+              <li>开发和维护 RESTful API，并采用 AWS Lambda 无服务器架构降低基础设施开销。</li>
+              <li>在跨职能团队中参与迭代规划和回顾会议，使用 Git 分支管理与代码评审。</li>
+            </ul>
+          `,
+        },
+      },
+    ],
   },
   {
     id: "projects",

@@ -269,3 +269,143 @@ html, body {
 :lang(zh) #ui-overlay h1 {
   letter-spacing: 0.08em;
 }
+
+/* Lists inside folder windows */
+
+#content-window-inner ul,
+#content-window-inner ol {
+  padding-left: 1.2rem;
+}
+
+#content-window-inner li {
+  margin-bottom: 0.35rem;
+}
+
+#content-window-inner.wide {
+  max-width: 760px;
+}
+
+/* Timeline (Education, Industry Experience) */
+
+#content-window-inner ol.timeline {
+  position: relative;
+  list-style: none;
+  margin-top: 0.5rem;
+  padding-left: 1.75rem;
+}
+
+/* The vertical line */
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 0.45rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+#content-window-inner .timeline-item {
+  position: relative;
+  margin-bottom: 0;
+  padding-bottom: 1.75rem;
+}
+
+#content-window-inner .timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+/* The dot on the line */
+.timeline-item::before {
+  content: "";
+  position: absolute;
+  left: calc(-1.75rem + 0.45rem + 1px - 6px);
+  top: 0.3rem;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffd966;
+  box-shadow: 0 0 0 4px rgba(255, 217, 102, 0.18);
+}
+
+#content-window-inner .timeline-date {
+  margin: 0;
+  font-family: "Syne Mono", "Noto Sans SC", monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: #ffd966;
+  opacity: 1;
+}
+
+#content-window-inner .timeline-title {
+  margin: 0.2rem 0 0.15rem;
+  font-size: 1.05rem;
+  opacity: 1;
+}
+
+#content-window-inner .timeline-org {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+#content-window-inner .timeline-highlight {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+}
+
+.timeline-more {
+  margin-top: 0.5rem;
+}
+
+.timeline-more summary {
+  display: inline-block;
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.85rem;
+  color: #9ecbff;
+}
+
+.timeline-more summary::-webkit-details-marker {
+  display: none;
+}
+
+.timeline-more summary::after {
+  content: " \25BE";
+}
+
+.timeline-more[open] summary::after {
+  content: " \25B4";
+}
+
+.timeline-more summary:hover,
+.timeline-more summary:focus-visible {
+  text-decoration: underline;
+}
+
+.timeline-details {
+  margin-top: 0.75rem;
+  padding: 1rem 1.1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+#content-window-inner .timeline-details p {
+  margin-bottom: 0.75rem;
+}
+
+#content-window-inner .timeline-details > :last-child {
+  margin-bottom: 0;
+}
+
+#content-window-inner .timeline-details ul {
+  margin-bottom: 0.75rem;
+}
+
+@media (max-width: 600px) {
+  #content-window-inner {
+    width: calc(100% - 32px);
+    padding: 1.5rem 1.25rem;
+  }
+}

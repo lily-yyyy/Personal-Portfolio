@@ -346,15 +346,55 @@ function renderDesktopIcons() {
   });
 }
 
+// Turn a folder's `timeline` list (see content.js) into HTML.
+function renderTimeline(entries) {
+  const items = entries
+    .map(
+      (entry) => `
+      <li class="timeline-item">
+        <p class="timeline-date">${entry.date[currentLang]}</p>
+        <h3 class="timeline-title">${entry.title[currentLang]}</h3>
+        <p class="timeline-org">${entry.org[currentLang]}</p>
+        ${entry.highlight ? `<p class="timeline-highlight">${entry.highlight[currentLang]}</p>` : ""}
+        ${
+          entry.details
+            ? `<details class="timeline-more">
+                 <summary>${t("showDetails")}</summary>
+                 <div class="timeline-details">${entry.details[currentLang]}</div>
+               </details>`
+            : ""
+        }
+      </li>`
+    )
+    .join("");
+  return `<ol class="timeline">${items}</ol>`;
+}
+
+const contentWindowInner = document.getElementById("content-window-inner");
+
 function renderWindow() {
   if (!openFolder) return;
   windowTitleEl.textContent = openFolder.label[currentLang];
-  windowBodyEl.innerHTML = openFolder.body[currentLang];
+
+  let html = openFolder.body ? openFolder.body[currentLang] : "";
+  if (openFolder.timeline) html += renderTimeline(openFolder.timeline);
+  windowBodyEl.innerHTML = html;
+
+  // Timelines need more room than a few paragraphs of text.
+  contentWindowInner.classList.toggle("wide", Boolean(openFolder.timeline));
+
+  // Swap the "Show details" / "Hide details" label as entries open and close.
+  windowBodyEl.querySelectorAll("details.timeline-more").forEach((el) => {
+    el.addEventListener("toggle", () => {
+      el.querySelector("summary").textContent = el.open ? t("hideDetails") : t("showDetails");
+    });
+  });
 }
 
 function openWindow(folder) {
   openFolder = folder;
   renderWindow();
+  contentWindowInner.scrollTop = 0;
   contentWindow.classList.remove("hidden");
 }
 
