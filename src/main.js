@@ -3,7 +3,38 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import gsap from "gsap";
-import { folders } from "./content.js";
+import { folders, ui } from "./content.js";
+
+// -----------------------------------------------------------------------
+// 0. LANGUAGE (English / 中文)
+// -----------------------------------------------------------------------
+// Pick the starting language in this order:
+//   1. ?lang=zh or ?lang=en in the URL (so you can share a Chinese link)
+//   2. whatever the visitor picked last time (saved in localStorage)
+//   3. the browser's own language (Chinese browsers get Chinese)
+const SUPPORTED_LANGS = ["en", "zh"];
+const LANG_STORAGE_KEY = "portfolio-lang";
+
+function getInitialLang() {
+  const fromUrl = new URLSearchParams(window.location.search).get("lang");
+  if (SUPPORTED_LANGS.includes(fromUrl)) return fromUrl;
+
+  try {
+    const saved = localStorage.getItem(LANG_STORAGE_KEY);
+    if (SUPPORTED_LANGS.includes(saved)) return saved;
+  } catch {
+    // Storage can be blocked (private mode etc.), that's fine.
+  }
+
+  return (navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en";
+}
+
+let currentLang = getInitialLang();
+
+// Look up an interface string in the current language.
+function t(key) {
+  return ui[currentLang][key] ?? ui.en[key] ?? key;
+}
 
 // -----------------------------------------------------------------------
 // 1. CONFIG - the only bit you should need to touch to get your model showing
@@ -93,6 +124,8 @@ const loader = new GLTFLoader();
 loader.setDRACOLoader(dracoLoader);
 
 let roomModel = null;
+let loadingPct = 0;
+let loadFailed = false;
 // Meshes you want to be clickable/hoverable. Fill this in once you've used
 // the debug panel (see section 5) to find your model's real mesh names.
 // LAPTOP_NAME is included automatically, add any others alongside it.
@@ -122,13 +155,14 @@ loader.load(
   (progress) => {
     if (progress.total) {
       const pct = Math.min(100, Math.round((progress.loaded / progress.total) * 100));
-      loadingText.textContent = `Loading room... ${pct}%`;
+      loadingPct = pct;
+      loadingText.textContent = t("loading").replace("{pct}", pct);
     }
   },
   (error) => {
     console.error("Failed to load model:", error);
-    loadingText.textContent =
-      "Could not load model. Check the file path and console for details.";
+    loadFailed = true;
+    loadingText.textContent = t("loadError");
   }
 );
 
@@ -231,6 +265,13 @@ window.addEventListener("pointermove", (event) => {
 let pointerDownPos = null;
 
 window.addEventListener("pointerdown", (event) => {
+  // Only clicks that start on the 3D canvas count. Otherwise clicking a
+  // button (like the language switch) could also "click" whatever object
+  // happens to be behind it in the room.
+  if (event.target !== canvas) {
+    pointerDownPos = null;
+    return;
+  }
   pointerDownPos = { x: event.clientX, y: event.clientY };
 });
 
@@ -284,29 +325,86 @@ const windowBodyEl = document.getElementById("window-body");
 
 let laptopOpen = false;
 let cameraStateBeforeZoom = null;
+// The folder whose window is currently open, so it can be re-rendered in
+// the new language if the visitor switches while reading it.
+let openFolder = null;
 
-// Build the folder icons once, from content.js. This doesn't depend on the
-// 3D model, so it runs immediately rather than waiting for the room to load.
-folders.forEach((folder) => {
-  const button = document.createElement("button");
-  button.className = "desktop-icon";
-  button.innerHTML = `
-    <span class="desktop-icon-glyph">${folder.icon}</span>
-    <span class="desktop-icon-label">${folder.label}</span>
-  `;
-  button.addEventListener("click", () => openWindow(folder));
-  desktopIconsEl.appendChild(button);
-});
+// Build the folder icons from content.js. This doesn't depend on the 3D
+// model, so it runs immediately rather than waiting for the room to load.
+// It's re-run whenever the language changes.
+function renderDesktopIcons() {
+  desktopIconsEl.innerHTML = "";
+  folders.forEach((folder) => {
+    const button = document.createElement("button");
+    button.className = "desktop-icon";
+    button.innerHTML = `
+      <span class="desktop-icon-glyph">${folder.icon}</span>
+      <span class="desktop-icon-label">${folder.label[currentLang]}</span>
+    `;
+    button.addEventListener("click", () => openWindow(folder));
+    desktopIconsEl.appendChild(button);
+  });
+}
+
+function renderWindow() {
+  if (!openFolder) return;
+  windowTitleEl.textContent = openFolder.label[currentLang];
+  windowBodyEl.innerHTML = openFolder.body[currentLang];
+}
 
 function openWindow(folder) {
-  windowTitleEl.textContent = folder.label;
-  windowBodyEl.innerHTML = folder.body;
+  openFolder = folder;
+  renderWindow();
   contentWindow.classList.remove("hidden");
 }
 
 function closeWindow() {
+  openFolder = null;
   contentWindow.classList.add("hidden");
 }
+
+// Swap every piece of visible text over to the given language.
+const langToggleBtn = document.getElementById("lang-toggle");
+
+function applyLanguage(lang) {
+  currentLang = lang;
+
+  document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+  document.title = t("pageTitle");
+
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+
+  loadingText.textContent = loadFailed
+    ? t("loadError")
+    : t("loading").replace("{pct}", loadingPct);
+
+  windowCloseBtn.setAttribute("aria-label", t("close"));
+  langToggleBtn.textContent = t("langToggle");
+  langToggleBtn.setAttribute("aria-label", t("langToggleLabel"));
+
+  renderDesktopIcons();
+  renderWindow();
+}
+
+langToggleBtn.addEventListener("click", () => {
+  const next = currentLang === "en" ? "zh" : "en";
+  applyLanguage(next);
+
+  try {
+    localStorage.setItem(LANG_STORAGE_KEY, next);
+  } catch {
+    // Ignore, the switch still works for this visit.
+  }
+
+  // Keep the address bar in sync, so copying the link shares this language.
+  const url = new URL(window.location.href);
+  url.searchParams.set("lang", next);
+  history.replaceState(null, "", url);
+});
+
+applyLanguage(currentLang);
 
 function openLaptop(object) {
   if (laptopOpen) return;

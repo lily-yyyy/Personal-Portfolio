@@ -7,7 +7,7 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
   background: #0e0e12;
 }
 
@@ -36,7 +36,7 @@ html, body {
 }
 
 #ui-overlay {
-  font-family: "Syne Mono", monospace;
+  font-family: "Syne Mono", "Noto Sans SC", monospace;
   font-weight: 400;
   position: fixed;
   top: 2rem;
@@ -49,7 +49,7 @@ html, body {
 }
 
 #ui-overlay h1 {
-  font-family: "Syne Mono", monospace;
+  font-family: "Syne Mono", "Noto Sans SC", monospace;
   font-size: clamp(1.75rem, 4vw, 3.5rem);
   text-shadow:
     1px 1px 0 #ccc,
@@ -87,7 +87,7 @@ html, body {
 /* Laptop "desktop" overlay */
 
 #laptop-overlay {
-  font-family: "Syne Mono", monospace;
+  font-family: "Syne Mono", "Noto Sans SC", monospace;
   /* font-family: "Nanum Gothic", sans-serif; */
   position: fixed;
   inset: 0;
@@ -154,7 +154,7 @@ html, body {
 }
 
 .desktop-icon-label {
-  font-family: "Syne Mono", monospace;
+  font-family: "Syne Mono", "Noto Sans SC", monospace;
   font-size: 0.85rem;
   text-align: center;
 }
@@ -162,7 +162,7 @@ html, body {
 /* Single content window, reused for every folder */
 
 #content-window {
-  font-family: "Nanum Gothic", sans-serif;
+  font-family: "Nanum Gothic", "Noto Sans SC", sans-serif;
   position: fixed;
   inset: 0;
   z-index: 40;
@@ -232,4 +232,40 @@ html, body {
 
 #content-window-inner a {
   color: #9ecbff;
+}
+
+/* Language switch */
+
+#lang-toggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 50;
+  min-width: 3.2rem;
+  padding: 0.45rem 0.9rem;
+  font-family: "Syne Mono", "Noto Sans SC", monospace;
+  font-size: 0.9rem;
+  color: #f5f5f5;
+  background: rgba(14, 14, 18, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: background 0.2s ease;
+}
+
+#lang-toggle:hover,
+#lang-toggle:focus-visible {
+  background: rgba(14, 14, 18, 0.95);
+}
+
+/* Chinese text reads better a little looser and without the heavy
+   stacked 3D shadow used on the English heading. */
+:lang(zh) #content-window-inner p,
+:lang(zh) #content-window-inner li {
+  line-height: 1.75;
+}
+
+:lang(zh) #ui-overlay h1 {
+  letter-spacing: 0.08em;
 }

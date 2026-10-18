@@ -3,7 +3,7 @@
   <head>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic&family=Noto+Serif+SC:wght@200..900&family=Syne+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic&family=Noto+Sans+SC:wght@400;700&family=Syne+Mono&display=swap" rel="stylesheet">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lily Lan's Portfolio</title>
@@ -14,13 +14,17 @@
 
     <!-- Loading screen. Hidden automatically once the model finishes loading. -->
     <div id="loading-screen">
-      <p id="loading-text">Loading room... 0%</p>
+      <p id="loading-text"></p>
     </div>
+
+    <!-- Language switch (English / 中文). Sits above every other layer so it
+         stays reachable from the room, the laptop desktop and open windows. -->
+    <button id="lang-toggle" type="button"></button>
 
     <!-- Simple overlay UI. Replace with your own sections later. -->
     <div id="ui-overlay">
-      <h1>Lily Lan's Space</h1>
-      <p>WELCOME, click on the laptop to explore more...</p>
+      <h1 data-i18n="heading">Lily Lan's Space</h1>
+      <p data-i18n="welcome">WELCOME, click on the laptop to explore more...</p>
     </div>
 
     <!-- This panel is just for development: it shows the name of whatever
@@ -32,7 +36,7 @@
     <!-- Shown when the laptop is clicked: a simple "desktop" full of folder
          icons, one per section. Populated from src/content.js. -->
     <div id="laptop-overlay" class="hidden">
-      <button id="laptop-close">&larr; Back to room</button>
+      <button id="laptop-close" data-i18n="backToRoom">&larr; Back to room</button>
       <div id="desktop-icons"></div>
     </div>
 
