@@ -309,42 +309,36 @@ function onObjectClicked(object) {
 }
 
 // -----------------------------------------------------------------------
-// 5b. LAPTOP "DESKTOP" UI
+// 5b. "LILY OS" - THE SIMULATED LAPTOP DESKTOP
 // -----------------------------------------------------------------------
-// Clicking the laptop animates the camera toward it with GSAP, then shows
-// a full-screen "desktop" of folder icons built from src/content.js.
-// Clicking a folder opens a window with that folder's content.
+// Clicking the laptop zooms the camera in, then fades into a pretend
+// operating system: a menu bar, desktop icons, a dock, and real windows
+// that can be dragged, minimised and closed. Everything inside comes
+// from src/content.js.
 
-const laptopOverlay = document.getElementById("laptop-overlay");
-const laptopCloseBtn = document.getElementById("laptop-close");
+const osEl = document.getElementById("os");
+const osBootEl = document.getElementById("os-boot");
 const desktopIconsEl = document.getElementById("desktop-icons");
-const contentWindow = document.getElementById("content-window");
-const windowCloseBtn = document.getElementById("window-close");
-const windowTitleEl = document.getElementById("window-title");
-const windowBodyEl = document.getElementById("window-body");
+const osWindowsEl = document.getElementById("os-windows");
+const osDockEl = document.getElementById("os-dock");
+const osClockEl = document.getElementById("os-clock");
+const osLangBtn = document.getElementById("os-lang");
+const osPowerBtn = document.getElementById("os-power");
+const langToggleBtn = document.getElementById("lang-toggle");
 
 let laptopOpen = false;
 let cameraStateBeforeZoom = null;
-// The folder whose window is currently open, so it can be re-rendered in
-// the new language if the visitor switches while reading it.
-let openFolder = null;
+let hasBooted = false;
 
-// Build the folder icons from content.js. This doesn't depend on the 3D
-// model, so it runs immediately rather than waiting for the room to load.
-// It's re-run whenever the language changes.
-function renderDesktopIcons() {
-  desktopIconsEl.innerHTML = "";
-  folders.forEach((folder) => {
-    const button = document.createElement("button");
-    button.className = "desktop-icon";
-    button.innerHTML = `
-      <span class="desktop-icon-glyph">${folder.icon}</span>
-      <span class="desktop-icon-label">${folder.label[currentLang]}</span>
-    `;
-    button.addEventListener("click", () => openWindow(folder));
-    desktopIconsEl.appendChild(button);
-  });
-}
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const isSmallScreen = () => window.matchMedia("(max-width: 700px)").matches;
+
+// Every open window, keyed by folder id: { el, folder, minimized }
+const openWindows = new Map();
+let topZ = 10;
+let cascadeStep = 0;
+
+// ---- Folder content ----------------------------------------------------
 
 // Turn a folder's `timeline` list (see content.js) into HTML.
 function renderTimeline(entries) {
@@ -370,81 +364,216 @@ function renderTimeline(entries) {
   return `<ol class="timeline">${items}</ol>`;
 }
 
-const contentWindowInner = document.getElementById("content-window-inner");
+function folderContentHtml(folder) {
+  let html = folder.body ? folder.body[currentLang] : "";
+  if (folder.timeline) html += renderTimeline(folder.timeline);
+  return html;
+}
 
-function renderWindow() {
-  if (!openFolder) return;
-  windowTitleEl.textContent = openFolder.label[currentLang];
+// ---- Desktop icons and dock --------------------------------------------
 
-  let html = openFolder.body ? openFolder.body[currentLang] : "";
-  if (openFolder.timeline) html += renderTimeline(openFolder.timeline);
-  windowBodyEl.innerHTML = html;
+function renderDesktopIcons() {
+  desktopIconsEl.innerHTML = "";
+  folders.forEach((folder) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "desktop-icon";
+    button.innerHTML = `
+      <span class="desktop-icon-tile" aria-hidden="true">${folder.icon}</span>
+      <span class="desktop-icon-label">${folder.label[currentLang]}</span>
+    `;
+    button.addEventListener("click", () => openWindow(folder));
+    desktopIconsEl.appendChild(button);
+  });
+}
 
-  // Timelines need more room than a few paragraphs of text.
-  contentWindowInner.classList.toggle("wide", Boolean(openFolder.timeline));
+function renderDock() {
+  osDockEl.innerHTML = "";
+  folders.forEach((folder) => {
+    const win = openWindows.get(folder.id);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "dock-item" + (win ? " is-open" : "");
+    button.title = folder.label[currentLang];
+    button.setAttribute("aria-label", folder.label[currentLang]);
+    button.innerHTML = `<span aria-hidden="true">${folder.icon}</span>`;
+    button.addEventListener("click", () => {
+      // Clicking the focused window's dock icon tucks it away, like a real OS.
+      if (win && !win.minimized && win === topmostWindow()) minimizeWindow(folder.id);
+      else openWindow(folder);
+    });
+    osDockEl.appendChild(button);
+  });
+}
+
+// ---- Windows -----------------------------------------------------------
+
+function topmostWindow() {
+  let best = null;
+  openWindows.forEach((win) => {
+    if (win.minimized) return;
+    if (!best || Number(win.el.style.zIndex) > Number(best.el.style.zIndex)) best = win;
+  });
+  return best;
+}
+
+function focusWindow(win) {
+  win.el.style.zIndex = ++topZ;
+  openWindows.forEach((other) => other.el.classList.toggle("is-focused", other === win));
+}
+
+function renderWindowContent(win) {
+  win.el.querySelector(".os-window-title").textContent = win.folder.label[currentLang];
+  win.el.querySelector('[data-action="close"]').setAttribute("aria-label", t("close"));
+  win.el.querySelector('[data-action="min"]').setAttribute("aria-label", t("minimize"));
+
+  const body = win.el.querySelector(".os-window-body");
+  body.innerHTML = folderContentHtml(win.folder);
 
   // Swap the "Show details" / "Hide details" label as entries open and close.
-  windowBodyEl.querySelectorAll("details.timeline-more").forEach((el) => {
+  body.querySelectorAll("details.timeline-more").forEach((el) => {
     el.addEventListener("toggle", () => {
       el.querySelector("summary").textContent = el.open ? t("hideDetails") : t("showDetails");
     });
   });
 }
 
-function openWindow(folder) {
-  openFolder = folder;
-  renderWindow();
-  contentWindowInner.scrollTop = 0;
-  contentWindow.classList.remove("hidden");
+// New windows open near the middle, each a little lower and to the right
+// of the last, so they never stack exactly on top of each other.
+function placeNewWindow(el) {
+  if (isSmallScreen()) return; // On phones CSS makes every window full screen.
+  const area = osWindowsEl.getBoundingClientRect();
+  const offset = (cascadeStep++ % 6) * 28;
+  const left = (area.width - el.offsetWidth) / 2 - 60 + offset;
+  const top = 28 + offset;
+  el.style.left = `${Math.max(16, Math.min(left, area.width - el.offsetWidth - 16))}px`;
+  const finalTop = Math.max(12, Math.min(top, area.height - el.offsetHeight - 12));
+  el.style.top = `${finalTop}px`;
+  // Stop tall windows above the dock instead of running behind it.
+  el.style.maxHeight = `${area.height - finalTop - 110}px`;
 }
 
-function closeWindow() {
-  openFolder = null;
-  contentWindow.classList.add("hidden");
-}
+function makeDraggable(el, handle) {
+  handle.addEventListener("pointerdown", (event) => {
+    if (isSmallScreen() || event.target.closest("button")) return;
+    const area = osWindowsEl.getBoundingClientRect();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startLeft = el.offsetLeft;
+    const startTop = el.offsetTop;
 
-// Swap every piece of visible text over to the given language.
-const langToggleBtn = document.getElementById("lang-toggle");
+    handle.setPointerCapture(event.pointerId);
+    el.classList.add("is-dragging");
 
-function applyLanguage(lang) {
-  currentLang = lang;
-
-  document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
-  document.title = t("pageTitle");
-
-  document.querySelectorAll("[data-i18n]").forEach((el) => {
-    el.textContent = t(el.dataset.i18n);
+    const onMove = (moveEvent) => {
+      // Keep at least part of the title bar on screen so it can be grabbed again.
+      const left = Math.min(Math.max(startLeft + moveEvent.clientX - startX, 80 - el.offsetWidth), area.width - 80);
+      const top = Math.min(Math.max(startTop + moveEvent.clientY - startY, 0), area.height - 48);
+      el.style.left = `${left}px`;
+      el.style.top = `${top}px`;
+    };
+    const onUp = () => {
+      el.classList.remove("is-dragging");
+      handle.removeEventListener("pointermove", onMove);
+      handle.removeEventListener("pointerup", onUp);
+      handle.removeEventListener("pointercancel", onUp);
+    };
+    handle.addEventListener("pointermove", onMove);
+    handle.addEventListener("pointerup", onUp);
+    handle.addEventListener("pointercancel", onUp);
   });
-
-  loadingText.textContent = loadFailed
-    ? t("loadError")
-    : t("loading").replace("{pct}", loadingPct);
-
-  windowCloseBtn.setAttribute("aria-label", t("close"));
-  langToggleBtn.textContent = t("langToggle");
-  langToggleBtn.setAttribute("aria-label", t("langToggleLabel"));
-
-  renderDesktopIcons();
-  renderWindow();
 }
 
-langToggleBtn.addEventListener("click", () => {
-  const next = currentLang === "en" ? "zh" : "en";
-  applyLanguage(next);
-
-  try {
-    localStorage.setItem(LANG_STORAGE_KEY, next);
-  } catch {
-    // Ignore, the switch still works for this visit.
+function openWindow(folder) {
+  const existing = openWindows.get(folder.id);
+  if (existing) {
+    existing.minimized = false;
+    existing.el.hidden = false;
+    focusWindow(existing);
+    renderDock();
+    return;
   }
 
-  // Keep the address bar in sync, so copying the link shares this language.
-  const url = new URL(window.location.href);
-  url.searchParams.set("lang", next);
-  history.replaceState(null, "", url);
-});
+  const el = document.createElement("section");
+  el.className = "os-window" + (folder.timeline ? " is-wide" : "");
+  el.setAttribute("role", "dialog");
+  el.setAttribute("aria-labelledby", `window-title-${folder.id}`);
+  el.innerHTML = `
+    <header class="os-window-bar">
+      <h2 class="os-window-title" id="window-title-${folder.id}"></h2>
+      <div class="os-window-buttons">
+        <button type="button" class="os-window-btn" data-action="min"><span aria-hidden="true">&minus;</span></button>
+        <button type="button" class="os-window-btn" data-action="close"><span aria-hidden="true">&times;</span></button>
+      </div>
+    </header>
+    <div class="os-window-body"></div>
+  `;
+  osWindowsEl.appendChild(el);
 
-applyLanguage(currentLang);
+  const win = { el, folder, minimized: false };
+  openWindows.set(folder.id, win);
+
+  renderWindowContent(win);
+  placeNewWindow(el);
+  makeDraggable(el, el.querySelector(".os-window-bar"));
+
+  el.addEventListener("pointerdown", () => focusWindow(win));
+  el.querySelector('[data-action="close"]').addEventListener("click", () => closeWindow(folder.id));
+  el.querySelector('[data-action="min"]').addEventListener("click", () => minimizeWindow(folder.id));
+
+  focusWindow(win);
+  renderDock();
+}
+
+function closeWindow(id) {
+  const win = openWindows.get(id);
+  if (!win) return;
+  win.el.remove();
+  openWindows.delete(id);
+  const next = topmostWindow();
+  if (next) focusWindow(next);
+  renderDock();
+}
+
+function minimizeWindow(id) {
+  const win = openWindows.get(id);
+  if (!win) return;
+  win.minimized = true;
+  win.el.hidden = true;
+  const next = topmostWindow();
+  if (next) focusWindow(next);
+  renderDock();
+}
+
+function closeAllWindows() {
+  [...openWindows.keys()].forEach(closeWindow);
+  cascadeStep = 0;
+}
+
+// ---- Menu bar clock and start-up screen --------------------------------
+
+function updateClock() {
+  osClockEl.textContent = new Intl.DateTimeFormat(currentLang === "zh" ? "zh-CN" : "en-AU", {
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date());
+}
+setInterval(updateClock, 20000);
+
+// The start-up screen only plays the first time per visit.
+function bootOS() {
+  if (hasBooted || prefersReducedMotion) {
+    hasBooted = true;
+    osBootEl.classList.add("is-done");
+    return;
+  }
+  hasBooted = true;
+  osBootEl.classList.remove("is-done");
+  setTimeout(() => osBootEl.classList.add("is-done"), 1500);
+}
+
+// ---- Opening and closing the laptop ------------------------------------
 
 function openLaptop(object) {
   if (laptopOpen) return;
@@ -462,9 +591,8 @@ function openLaptop(object) {
 
   // Move partway from the current camera position toward the laptop,
   // rather than all the way to it, so the camera doesn't clip through the
-  // mesh. Raise this fraction toward 1 for a closer zoom, lower it for a
-  // more subtle one.
-  const zoomPosition = camera.position.clone().lerp(laptopWorldPosition, 0.55);
+  // mesh. Raise this fraction toward 1 for a closer zoom.
+  const zoomPosition = camera.position.clone().lerp(laptopWorldPosition, 0.7);
 
   gsap.to(camera.position, {
     x: zoomPosition.x,
@@ -481,7 +609,10 @@ function openLaptop(object) {
     duration: 1.1,
     ease: "power2.inOut",
     onComplete: () => {
-      laptopOverlay.classList.remove("hidden");
+      updateClock();
+      bootOS();
+      document.body.classList.add("os-open");
+      osEl.classList.remove("hidden");
     },
   });
 }
@@ -490,8 +621,9 @@ function closeLaptop() {
   if (!laptopOpen || !cameraStateBeforeZoom) return;
   laptopOpen = false;
 
-  laptopOverlay.classList.add("hidden");
-  closeWindow();
+  osEl.classList.add("hidden");
+  document.body.classList.remove("os-open");
+  closeAllWindows();
 
   gsap.to(camera.position, {
     x: cameraStateBeforeZoom.position.x,
@@ -513,20 +645,78 @@ function closeLaptop() {
   });
 }
 
-laptopCloseBtn.addEventListener("click", closeLaptop);
-windowCloseBtn.addEventListener("click", closeWindow);
+osPowerBtn.addEventListener("click", closeLaptop);
 
-// Escape closes whichever layer is currently open: a folder window first,
-// then the laptop desktop itself.
-window.addEventListener("keydown", (event) => {
-  if (event.key !== "Escape") return;
-
-  if (!contentWindow.classList.contains("hidden")) {
-    closeWindow();
-  } else if (laptopOpen) {
-    closeLaptop();
-  }
+// Clicking anywhere on the desktop outside a window (the wallpaper or the
+// sticky note) closes the window in front, like dismissing a pop-up.
+// Clicks on windows, folder icons and the dock keep working as normal.
+document.getElementById("os-desktop").addEventListener("click", (event) => {
+  // composedPath() is recorded when the click happens, so it still works when
+  // the click itself removed the element (e.g. the × button closing a window).
+  const insideSomething = event
+    .composedPath()
+    .some((el) => el instanceof Element && el.matches(".os-window, .desktop-icon, #os-dock"));
+  if (insideSomething) return;
+  const top = topmostWindow();
+  if (top) closeWindow(top.folder.id);
 });
+
+// Escape closes the front window first, then leaves the laptop.
+window.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || !laptopOpen) return;
+  const top = topmostWindow();
+  if (top) closeWindow(top.folder.id);
+  else closeLaptop();
+});
+
+// ---- Language ----------------------------------------------------------
+
+// Swap every piece of visible text over to the given language.
+function applyLanguage(lang) {
+  currentLang = lang;
+
+  document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+  document.title = t("pageTitle");
+
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+
+  loadingText.textContent = loadFailed
+    ? t("loadError")
+    : t("loading").replace("{pct}", loadingPct);
+
+  [langToggleBtn, osLangBtn].forEach((btn) => {
+    btn.textContent = t("langToggle");
+    btn.setAttribute("aria-label", t("langToggleLabel"));
+  });
+
+  renderDesktopIcons();
+  renderDock();
+  openWindows.forEach(renderWindowContent);
+  updateClock();
+}
+
+function toggleLanguage() {
+  const next = currentLang === "en" ? "zh" : "en";
+  applyLanguage(next);
+
+  try {
+    localStorage.setItem(LANG_STORAGE_KEY, next);
+  } catch {
+    // Ignore, the switch still works for this visit.
+  }
+
+  // Keep the address bar in sync, so copying the link shares this language.
+  const url = new URL(window.location.href);
+  url.searchParams.set("lang", next);
+  history.replaceState(null, "", url);
+}
+
+langToggleBtn.addEventListener("click", toggleLanguage);
+osLangBtn.addEventListener("click", toggleLanguage);
+
+applyLanguage(currentLang);
 
 // -----------------------------------------------------------------------
 // 6. RESIZE HANDLING + RENDER LOOP

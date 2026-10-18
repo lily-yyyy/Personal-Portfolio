@@ -33,20 +33,42 @@
          mapping names to sections. -->
     <!-- <div id="debug-panel">Hover an object to see its name</div> -->
 
-    <!-- Shown when the laptop is clicked: a simple "desktop" full of folder
-         icons, one per section. Populated from src/content.js. -->
-    <div id="laptop-overlay" class="hidden">
-      <button id="laptop-close" data-i18n="backToRoom">&larr; Back to room</button>
-      <div id="desktop-icons"></div>
-    </div>
-
-    <!-- A single reusable window for whichever folder is currently open. -->
-    <div id="content-window" class="hidden">
-      <div id="content-window-inner">
-        <button id="window-close" aria-label="Close">&times;</button>
-        <h2 id="window-title"></h2>
-        <div id="window-body"></div>
+    <!-- "Lily OS": the pretend laptop desktop shown when the laptop is
+         clicked. Icons, dock and windows are built from src/content.js. -->
+    <div id="os" class="hidden">
+      <div id="os-boot" class="is-done" aria-hidden="true">
+        <div class="os-boot-mark">
+          <span class="os-logo"></span>
+          <span class="os-boot-name">Lily OS</span>
+        </div>
+        <div class="os-boot-bar"><span></span></div>
+        <p class="os-boot-text" data-i18n="bootText">Starting up...</p>
       </div>
+
+      <header id="os-menubar">
+        <div class="os-brand"><span class="os-logo"></span>Lily OS</div>
+        <div class="os-menubar-right">
+          <button id="os-lang" type="button"></button>
+          <span id="os-clock"></span>
+          <button id="os-power" type="button">
+            <span class="os-power-icon" aria-hidden="true">&#x23FB;</span>
+            <span data-i18n="powerOff">Back to room</span>
+          </button>
+        </div>
+      </header>
+
+      <main id="os-desktop">
+        <div id="desktop-icons"></div>
+
+        <aside id="os-note">
+          <p class="os-note-title" data-i18n="noteTitle"></p>
+          <p data-i18n="noteBody"></p>
+          <p class="os-note-sign" data-i18n="noteSign"></p>
+        </aside>
+
+        <div id="os-windows"></div>
+        <nav id="os-dock" aria-label="Dock"></nav>
+      </main>
     </div>
 
     <script type="module" src="/src/main.js"></script>
