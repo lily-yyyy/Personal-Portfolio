@@ -340,6 +340,76 @@ let cascadeStep = 0;
 
 // ---- Folder content ----------------------------------------------------
 
+// A row of photos. Each one is a button so clicking it opens the
+// full-size viewer (see "Photo viewer" below).
+function renderPhotos(photos, className = "photo-strip") {
+  if (!photos || !photos.length) return "";
+  const items = photos
+    .map((photo) => {
+      const caption = photo.caption ? photo.caption[currentLang] : "";
+      const date = photo.date ? photo.date[currentLang] : "";
+      return `
+      <figure class="photo">
+        <button type="button" class="photo-open" data-lightbox data-caption="${caption}" data-date="${date}">
+          <img src="${photo.src}" alt="${caption}" loading="lazy" decoding="async" />
+        </button>
+        ${caption || date ? `<figcaption>${date ? `<span class="photo-date">${date}</span>` : ""}${caption}</figcaption>` : ""}
+      </figure>`;
+    })
+    .join("");
+  return `<div class="${className}">${items}</div>`;
+}
+
+// A row of link buttons that open in a new tab.
+function renderLinks(links) {
+  if (!links || !links.length) return "";
+  const items = links
+    .map(
+      (link) =>
+        `<a class="link-btn" href="${link.url}" target="_blank" rel="noopener noreferrer">${link.label[currentLang]}<span aria-hidden="true"> ↗</span></a>`
+    )
+    .join("");
+  return `<div class="link-row">${items}</div>`;
+}
+
+function renderDetails(details) {
+  if (!details) return "";
+  return `<details class="timeline-more">
+            <summary>${t("showDetails")}</summary>
+            <div class="timeline-details">${details[currentLang]}</div>
+          </details>`;
+}
+
+// Turn a folder's `projects` list into cards.
+function renderProjects(projects) {
+  const cards = projects
+    .map(
+      (project) => `
+      <article class="project-card">
+        <div class="project-cover${project.image ? "" : " is-icon"}">
+          ${
+            project.image
+              ? `<button type="button" class="photo-open" data-lightbox data-caption="${project.title[currentLang]}">
+                   <img src="${project.image}" alt="${project.title[currentLang]}" loading="lazy" decoding="async" />
+                 </button>`
+              : `<span class="project-cover-icon" aria-hidden="true">${project.icon || "📁"}</span>`
+          }
+          ${project.badge ? `<span class="project-badge">🏆 ${project.badge[currentLang]}</span>` : ""}
+        </div>
+        <div class="project-body">
+          <h3 class="project-title">${project.title[currentLang]}</h3>
+          <p class="project-period">${project.period[currentLang]}</p>
+          <p class="project-summary">${project.summary[currentLang]}</p>
+          ${project.tags ? `<ul class="tag-list">${project.tags.map((tag) => `<li>${tag}</li>`).join("")}</ul>` : ""}
+          ${renderLinks(project.links)}
+          ${renderDetails(project.details)}
+        </div>
+      </article>`
+    )
+    .join("");
+  return `<div class="project-grid">${cards}</div>`;
+}
+
 // Turn a folder's `timeline` list (see content.js) into HTML.
 function renderTimeline(entries) {
   const items = entries
@@ -350,14 +420,9 @@ function renderTimeline(entries) {
         <h3 class="timeline-title">${entry.title[currentLang]}</h3>
         <p class="timeline-org">${entry.org[currentLang]}</p>
         ${entry.highlight ? `<p class="timeline-highlight">${entry.highlight[currentLang]}</p>` : ""}
-        ${
-          entry.details
-            ? `<details class="timeline-more">
-                 <summary>${t("showDetails")}</summary>
-                 <div class="timeline-details">${entry.details[currentLang]}</div>
-               </details>`
-            : ""
-        }
+        ${renderPhotos(entry.photos)}
+        ${renderLinks(entry.links)}
+        ${renderDetails(entry.details)}
       </li>`
     )
     .join("");
@@ -367,6 +432,8 @@ function renderTimeline(entries) {
 function folderContentHtml(folder) {
   let html = folder.body ? folder.body[currentLang] : "";
   if (folder.timeline) html += renderTimeline(folder.timeline);
+  if (folder.projects) html += renderProjects(folder.projects);
+  if (folder.gallery) html += renderPhotos(folder.gallery, "photo-wall");
   return html;
 }
 
@@ -429,6 +496,11 @@ function renderWindowContent(win) {
 
   const body = win.el.querySelector(".os-window-body");
   body.innerHTML = folderContentHtml(win.folder);
+
+  // Photos open in the full-size viewer.
+  body.querySelectorAll("[data-lightbox]").forEach((button) => {
+    button.addEventListener("click", () => openLightbox(body, button));
+  });
 
   // Swap the "Show details" / "Hide details" label as entries open and close.
   body.querySelectorAll("details.timeline-more").forEach((el) => {
@@ -495,7 +567,8 @@ function openWindow(folder) {
   }
 
   const el = document.createElement("section");
-  el.className = "os-window" + (folder.timeline ? " is-wide" : "");
+  const isWide = folder.timeline || folder.projects || folder.gallery;
+  el.className = "os-window" + (isWide ? " is-wide" : "");
   el.setAttribute("role", "dialog");
   el.setAttribute("aria-labelledby", `window-title-${folder.id}`);
   el.innerHTML = `
@@ -549,6 +622,77 @@ function closeAllWindows() {
   [...openWindows.keys()].forEach(closeWindow);
   cascadeStep = 0;
 }
+
+// ---- Photo viewer ------------------------------------------------------
+// Clicking a photo shows it full size. Arrow keys / buttons step through
+// the other photos in the same window; Escape or a click outside closes it.
+
+const lightboxEl = document.createElement("div");
+lightboxEl.id = "lightbox";
+lightboxEl.hidden = true;
+lightboxEl.setAttribute("role", "dialog");
+lightboxEl.setAttribute("aria-modal", "true");
+lightboxEl.innerHTML = `
+  <button type="button" class="lightbox-btn lightbox-close" data-lb="close"><span aria-hidden="true">&times;</span></button>
+  <button type="button" class="lightbox-btn lightbox-prev" data-lb="prev"><span aria-hidden="true">&larr;</span></button>
+  <figure class="lightbox-figure">
+    <img alt="" />
+    <figcaption></figcaption>
+  </figure>
+  <button type="button" class="lightbox-btn lightbox-next" data-lb="next"><span aria-hidden="true">&rarr;</span></button>
+`;
+osEl.appendChild(lightboxEl);
+
+let lightboxItems = [];
+let lightboxIndex = 0;
+let lightboxReturnFocus = null;
+
+function showLightboxItem(index) {
+  lightboxIndex = (index + lightboxItems.length) % lightboxItems.length;
+  const button = lightboxItems[lightboxIndex];
+  const img = lightboxEl.querySelector("img");
+  img.src = button.querySelector("img").src;
+  img.alt = button.dataset.caption || "";
+  const date = button.dataset.date;
+  lightboxEl.querySelector("figcaption").innerHTML =
+    (date ? `<span class="photo-date">${date}</span>` : "") + (button.dataset.caption || "");
+  const several = lightboxItems.length > 1;
+  lightboxEl.querySelector(".lightbox-prev").hidden = !several;
+  lightboxEl.querySelector(".lightbox-next").hidden = !several;
+}
+
+function openLightbox(container, button) {
+  lightboxItems = [...container.querySelectorAll("[data-lightbox]")];
+  lightboxReturnFocus = button;
+  lightboxEl.querySelector('[data-lb="close"]').setAttribute("aria-label", t("close"));
+  lightboxEl.querySelector('[data-lb="prev"]').setAttribute("aria-label", t("prevPhoto"));
+  lightboxEl.querySelector('[data-lb="next"]').setAttribute("aria-label", t("nextPhoto"));
+  showLightboxItem(lightboxItems.indexOf(button));
+  lightboxEl.hidden = false;
+  lightboxEl.querySelector('[data-lb="close"]').focus();
+}
+
+function closeLightbox() {
+  lightboxEl.hidden = true;
+  lightboxEl.querySelector("img").removeAttribute("src");
+  if (lightboxReturnFocus && document.contains(lightboxReturnFocus)) lightboxReturnFocus.focus();
+}
+
+const lightboxOpen = () => !lightboxEl.hidden;
+
+lightboxEl.addEventListener("click", (event) => {
+  const action = event.target.closest("[data-lb]")?.dataset.lb;
+  if (action === "close") closeLightbox();
+  else if (action === "prev") showLightboxItem(lightboxIndex - 1);
+  else if (action === "next") showLightboxItem(lightboxIndex + 1);
+  else if (!event.target.closest("img")) closeLightbox();
+});
+
+window.addEventListener("keydown", (event) => {
+  if (!lightboxOpen()) return;
+  if (event.key === "ArrowLeft") showLightboxItem(lightboxIndex - 1);
+  else if (event.key === "ArrowRight") showLightboxItem(lightboxIndex + 1);
+});
 
 // ---- Menu bar clock and start-up screen --------------------------------
 
@@ -620,6 +764,7 @@ function openLaptop(object) {
 function closeLaptop() {
   if (!laptopOpen || !cameraStateBeforeZoom) return;
   laptopOpen = false;
+  if (lightboxOpen()) closeLightbox();
 
   osEl.classList.add("hidden");
   document.body.classList.remove("os-open");
@@ -663,7 +808,12 @@ document.getElementById("os-desktop").addEventListener("click", (event) => {
 
 // Escape closes the front window first, then leaves the laptop.
 window.addEventListener("keydown", (event) => {
-  if (event.key !== "Escape" || !laptopOpen) return;
+  if (event.key !== "Escape") return;
+  if (lightboxOpen()) {
+    closeLightbox();
+    return;
+  }
+  if (!laptopOpen) return;
   const top = topmostWindow();
   if (top) closeWindow(top.folder.id);
   else closeLaptop();
@@ -674,6 +824,7 @@ window.addEventListener("keydown", (event) => {
 // Swap every piece of visible text over to the given language.
 function applyLanguage(lang) {
   currentLang = lang;
+  if (lightboxOpen()) closeLightbox();
 
   document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
   document.title = t("pageTitle");

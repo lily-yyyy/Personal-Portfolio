@@ -1,3 +1,7 @@
 node_modules/
 dist/
 .DS_Store
+
+# Full-size photo originals (web copies live in public/images)
+photo-originals/
+.claude/
